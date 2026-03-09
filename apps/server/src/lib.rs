@@ -491,6 +491,7 @@ impl VaultNoteService for VaultNoteServiceImpl {
 
     type SearchNotesStream = Pin<Box<dyn Stream<Item = Result<Note, Status>> + Send>>;
 
+    #[allow(clippy::result_large_err)]
     async fn search_notes(
         &self,
         request: Request<SearchNotesRequest>,
@@ -742,6 +743,7 @@ impl VaultNoteService for VaultNoteServiceImpl {
 
     type SemanticSearchStream = Pin<Box<dyn Stream<Item = Result<Note, Status>> + Send>>;
 
+    #[allow(clippy::result_large_err)]
     async fn semantic_search(
         &self,
         request: Request<SemanticSearchRequest>,
