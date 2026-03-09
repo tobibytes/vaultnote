@@ -17,7 +17,6 @@ Date: 2026-03-09
   - `CreateNote`
   - `ListNotes`
 - Rust protobuf build script added at `apps/server/build.rs`.
-- Rust protobuf build script now generates both server and client code.
 - Docker Compose added for Postgres + Redis in `infra/docker-compose.yml`.
 - Local environment file created (`.env`) with DB/Redis/gRPC/HTTP addresses.
 - SQLx migration created and applied:
@@ -29,7 +28,10 @@ Date: 2026-03-09
   - gRPC `CreateNote` implementation backed by Postgres
   - gRPC `ListNotes` implementation backed by Postgres
 - MAUI `MainPage` now includes a `Ping Backend` button that calls Rust gRPC `Ping` and renders response/error text.
-- Added a Rust smoke-test binary at `apps/server/src/bin/grpc_smoke.rs` for local gRPC verification (`Ping`, `CreateNote`, `ListNotes`).
+- Added real Rust automated tests at `apps/server/tests/server_tests.rs`:
+  - `create_note_rejects_blank_title`
+  - `create_and_list_notes_round_trip`
+  - `health_and_ready_endpoints_return_ok`
 - Rust source module skeleton folders created for continuation:
   - `config`, `grpc`, `http`, `db`, `cache`, `domain`, `app`
 - Root `.gitignore` added to ignore build artifacts and local env files.
@@ -48,9 +50,7 @@ Date: 2026-03-09
 - MAUI Mac Catalyst build succeeds in this environment with:
   - `dotnet build apps/mobile/VaultNote.Mobile/VaultNote.Mobile.csproj -f net9.0-maccatalyst -p:ValidateXcodeVersion=false -p:EnableCodeSigning=false`
 - Updated Rust + MAUI code compiles after Milestone 3/4 slice edits.
-- Runtime gRPC smoke check works from local CLI client:
-  - `cargo run --manifest-path apps/server/Cargo.toml --bin grpc_smoke`
-  - Verified `Ping`, `CreateNote`, and `ListNotes` against running server.
+- Real Rust tests run via `cargo test --manifest-path apps/server/Cargo.toml`.
 
 ## What did not work (or not yet verified)
 
@@ -69,7 +69,7 @@ Date: 2026-03-09
   - Launch app and validate MAUI `Ping` click-path against local server
 - Add Redis caching for `ListNotes`.
 - Extend `/ready` to include Redis readiness when cache integration is added.
-- Add basic integration tests or scriptable smoke checks.
+- Add MAUI-side unit/integration tests and network-level gRPC integration coverage.
 
 ## Continue-from-here commands
 
@@ -115,24 +115,12 @@ dotnet build apps/mobile/VaultNote.Mobile/VaultNote.Mobile.csproj \
 sudo dotnet workload update
 ```
 
-### 6) Optional gRPC runtime smoke check
-
-Start server in one terminal:
+### 6) Run real Rust tests
 
 ```bash
-cd /Users/oluwatobiolajide/Desktop/Code/grpc_mobile/vaultnote
+cd /Users/oluwatobiolajide/Desktop/Code/grpc_mobile/vaultnote/apps/server
 set -a
-source .env
+source ../../.env
 set +a
-cargo run --manifest-path apps/server/Cargo.toml --bin vaultnote-server
-```
-
-Then run smoke client in another terminal:
-
-```bash
-cd /Users/oluwatobiolajide/Desktop/Code/grpc_mobile/vaultnote
-set -a
-source .env
-set +a
-cargo run --manifest-path apps/server/Cargo.toml --bin grpc_smoke
+cargo test
 ```
