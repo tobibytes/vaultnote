@@ -10,6 +10,15 @@ service VaultNoteService {
   rpc Ping (PingRequest) returns (PingResponse);
   rpc CreateNote (CreateNoteRequest) returns (CreateNoteResponse);
   rpc ListNotes (ListNotesRequest) returns (ListNotesResponse);
+
+  // Milestone 6: server-streaming search
+  rpc SearchNotes (SearchNotesRequest) returns (stream Note);
+
+  // Milestone 7: client-streaming document upload
+  rpc UploadDocument (stream UploadDocumentRequest) returns (UploadDocumentResponse);
+
+  // Milestone 8: bidirectional "Ask Vault" session
+  rpc AskVault (stream AskVaultRequest) returns (stream AskVaultResponse);
 }
 
 message PingRequest {}
@@ -39,4 +48,32 @@ message ListNotesRequest {}
 
 message ListNotesResponse {
   repeated Note notes = 1;
+}
+
+// Milestone 6
+message SearchNotesRequest {
+  string query = 1;
+}
+
+// Milestone 7
+message UploadDocumentRequest {
+  string note_id  = 1;
+  string filename = 2;
+  bytes  chunk    = 3;
+}
+
+message UploadDocumentResponse {
+  string document_id    = 1;
+  int64  bytes_received = 2;
+}
+
+// Milestone 8
+message AskVaultRequest {
+  string question = 1;
+}
+
+// AskVaultResponse streams one token at a time.  Clients should concatenate
+// all tokens to assemble the full answer text.
+message AskVaultResponse {
+  string token = 1;
 }

@@ -6,8 +6,11 @@ use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::SocketAddr;
+use std::pin::Pin;
 use tokio::net::TcpListener;
-use tonic::{transport::Server, Request, Response, Status};
+use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::{Stream, StreamExt};
+use tonic::{transport::Server, Request, Response, Status, Streaming};
 use tracing::{error, info, warn};
 use uuid::Uuid;
 
@@ -17,8 +20,9 @@ pub mod proto {
 
 use proto::vault_note_service_server::{VaultNoteService, VaultNoteServiceServer};
 use proto::{
-    CreateNoteRequest, CreateNoteResponse, ListNotesRequest, ListNotesResponse, Note, PingRequest,
-    PingResponse,
+    AskVaultRequest, AskVaultResponse, CreateNoteRequest, CreateNoteResponse, ListNotesRequest,
+    ListNotesResponse, Note, PingRequest, PingResponse, SearchNotesRequest, UploadDocumentRequest,
+    UploadDocumentResponse,
 };
 
 const NOTES_LIST_CACHE_KEY: &str = "notes:list";
@@ -154,6 +158,162 @@ impl VaultNoteService for VaultNoteServiceImpl {
 
         let notes = rows.into_iter().map(map_note).collect();
         Ok(Response::new(ListNotesResponse { notes }))
+    }
+
+    // --- Milestone 6: server-streaming SearchNotes ---
+
+    type SearchNotesStream = Pin<Box<dyn Stream<Item = Result<Note, Status>> + Send>>;
+
+    async fn search_notes(
+        &self,
+        request: Request<SearchNotesRequest>,
+    ) -> Result<Response<Self::SearchNotesStream>, Status> {
+        let query = request.into_inner().query;
+        let pattern = format!("%{}%", query);
+
+        let rows = sqlx::query_as::<_, NoteRow>(
+            r#"
+            SELECT id, title, content, created_at, updated_at
+            FROM notes
+            WHERE title ILIKE $1 OR content ILIKE $1
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(pattern)
+        .fetch_all(&self.db)
+        .await
+        .map_err(map_db_error)?;
+
+        let stream = tokio_stream::iter(rows.into_iter().map(|r| Ok(map_note(r))));
+        Ok(Response::new(Box::pin(stream)))
+    }
+
+    // --- Milestone 7: client-streaming UploadDocument ---
+
+    async fn upload_document(
+        &self,
+        request: Request<Streaming<UploadDocumentRequest>>,
+    ) -> Result<Response<UploadDocumentResponse>, Status> {
+        let mut stream = request.into_inner();
+
+        let mut note_id_str = String::new();
+        let mut filename = String::new();
+        let mut content: Vec<u8> = Vec::new();
+
+        while let Some(chunk) = stream.next().await {
+            let chunk = chunk?;
+            if note_id_str.is_empty() {
+                note_id_str = chunk.note_id;
+                filename = chunk.filename;
+            }
+            content.extend_from_slice(&chunk.chunk);
+        }
+
+        if note_id_str.is_empty() {
+            return Err(Status::invalid_argument("note_id is required"));
+        }
+
+        let note_id = Uuid::parse_str(&note_id_str)
+            .map_err(|_| Status::invalid_argument("note_id must be a valid UUID"))?;
+
+        let size_bytes = content.len() as i64;
+
+        let document_id = sqlx::query_scalar::<_, Uuid>(
+            r#"
+            INSERT INTO documents (note_id, filename, content, size_bytes)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+            "#,
+        )
+        .bind(note_id)
+        .bind(&filename)
+        .bind(&content)
+        .bind(size_bytes)
+        .fetch_one(&self.db)
+        .await
+        .map_err(map_db_error)?;
+
+        Ok(Response::new(UploadDocumentResponse {
+            document_id: document_id.to_string(),
+            bytes_received: size_bytes,
+        }))
+    }
+
+    // --- Milestone 8: bidirectional AskVault session ---
+
+    type AskVaultStream = Pin<Box<dyn Stream<Item = Result<AskVaultResponse, Status>> + Send>>;
+
+    async fn ask_vault(
+        &self,
+        request: Request<Streaming<AskVaultRequest>>,
+    ) -> Result<Response<Self::AskVaultStream>, Status> {
+        let mut stream = request.into_inner();
+        let db = self.db.clone();
+
+        let (tx, rx) = tokio::sync::mpsc::channel(32);
+
+        tokio::spawn(async move {
+            while let Some(msg) = stream.next().await {
+                match msg {
+                    Ok(req) => {
+                        let question = req.question;
+                        if question.is_empty() {
+                            continue;
+                        }
+                        let pattern = format!("%{}%", question);
+
+                        let rows = sqlx::query_as::<_, NoteRow>(
+                            r#"
+                            SELECT id, title, content, created_at, updated_at
+                            FROM notes
+                            WHERE title ILIKE $1 OR content ILIKE $1
+                            ORDER BY created_at DESC
+                            LIMIT 3
+                            "#,
+                        )
+                        .bind(pattern)
+                        .fetch_all(&db)
+                        .await;
+
+                        match rows {
+                            Ok(notes) if notes.is_empty() => {
+                                let _ = tx
+                                    .send(Ok(AskVaultResponse {
+                                        token: "No relevant notes found.".to_string(),
+                                    }))
+                                    .await;
+                            }
+                            Ok(notes) => {
+                                let _ = tx
+                                    .send(Ok(AskVaultResponse {
+                                        token: format!(
+                                            "Found {} relevant note(s): ",
+                                            notes.len()
+                                        ),
+                                    }))
+                                    .await;
+                                for note in notes {
+                                    let _ = tx
+                                        .send(Ok(AskVaultResponse {
+                                            token: format!("[{}] ", note.title),
+                                        }))
+                                        .await;
+                                }
+                            }
+                            Err(err) => {
+                                let _ = tx.send(Err(map_db_error(err))).await;
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        let _ = tx.send(Err(err)).await;
+                        break;
+                    }
+                }
+            }
+        });
+
+        Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
     }
 }
 
