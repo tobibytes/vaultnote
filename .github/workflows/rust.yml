@@ -1,0 +1,90 @@
+name: Rust Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/server/**'
+      - 'proto/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/server/**'
+      - 'proto/**'
+      - '.github/workflows/rust.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+  DATABASE_URL: postgres://vaultnote:vaultnote@localhost:5432/vaultnote
+  REDIS_URL: redis://127.0.0.1:6379
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vaultnote
+          POSTGRES_PASSWORD: vaultnote
+          POSTGRES_DB: vaultnote
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install protobuf compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/server/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('apps/server/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres --locked
+
+      - name: Run database migrations
+        working-directory: apps/server
+        run: sqlx migrate run
+
+      - name: Cargo check
+        working-directory: apps/server
+        run: cargo check
+
+      - name: Cargo clippy
+        working-directory: apps/server
+        run: cargo clippy -- -D warnings
+
+      - name: Cargo test
+        working-directory: apps/server
+        run: cargo test

@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use std::net::SocketAddr;
 use tracing_subscriber::EnvFilter;
-use vaultnote_server::{create_db_pool, run_servers};
+use vaultnote_server::{create_db_pool, create_redis_client, run_servers};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -12,6 +12,7 @@ async fn main() -> Result<()> {
         .init();
 
     let database_url = std::env::var("DATABASE_URL").context("DATABASE_URL must be set")?;
+    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let grpc_addr: SocketAddr = std::env::var("GRPC_ADDR")
         .unwrap_or_else(|_| "127.0.0.1:50051".to_string())
         .parse()
@@ -22,5 +23,6 @@ async fn main() -> Result<()> {
         .context("invalid HTTP_ADDR")?;
 
     let db = create_db_pool(&database_url).await?;
-    run_servers(db, grpc_addr, http_addr).await
+    let redis = create_redis_client(&redis_url)?;
+    run_servers(db, redis, grpc_addr, http_addr).await
 }

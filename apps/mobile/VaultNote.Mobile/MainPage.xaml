@@ -6,13 +6,23 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="16">
             <Label
-                Text="VaultNote Bootstrap"
+                Text="VaultNote"
                 Style="{StaticResource Headline}"
                 SemanticProperties.HeadingLevel="Level1" />
 
             <Label
-                Text="Milestone 3: gRPC Ping"
+                Text="Personal knowledge vault"
                 Style="{StaticResource SubHeadline}" />
+
+            <Button
+                Text="Create Note"
+                Clicked="OnCreateNoteClicked"
+                HorizontalOptions="Fill" />
+
+            <Button
+                Text="List Notes"
+                Clicked="OnListNotesClicked"
+                HorizontalOptions="Fill" />
 
             <Button
                 x:Name="PingButton"
