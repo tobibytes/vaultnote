@@ -18,6 +18,7 @@ env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: postgres://vaultnote:vaultnote@localhost:5432/vaultnote
   REDIS_URL: redis://127.0.0.1:6379
+  JWT_SECRET: ci-test-jwt-secret-not-for-production
 
 jobs:
   test:

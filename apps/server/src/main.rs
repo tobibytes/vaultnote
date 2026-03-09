@@ -22,8 +22,7 @@ async fn main() -> Result<()> {
         .parse()
         .context("invalid HTTP_ADDR")?;
 
-    let jwt_secret = std::env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "change-me-in-production".to_string());
+    let jwt_secret = std::env::var("JWT_SECRET").context("JWT_SECRET must be set")?;
 
     let db = create_db_pool(&database_url).await?;
     let redis = create_redis_client(&redis_url)?;

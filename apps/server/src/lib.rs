@@ -49,8 +49,9 @@ const EMBEDDING_DIM: usize = 384;
 struct Claims {
     /// Subject – the user's UUID as a string.
     sub: String,
-    /// Expiry (Unix timestamp in seconds).
-    exp: usize,
+    /// Expiry (Unix timestamp in seconds).  Using u64 avoids the Y2038
+    /// overflow that `usize` would cause on 32-bit targets.
+    exp: u64,
 }
 
 // ---------------------------------------------------------------------------
@@ -145,7 +146,8 @@ fn generate_jwt(user_id: &str, secret: &str) -> Result<String, Status> {
     let exp = chrono::Utc::now()
         .checked_add_signed(chrono::Duration::hours(24))
         .expect("valid timestamp")
-        .timestamp() as usize;
+        .timestamp()
+        .max(0) as u64;
     encode(
         &Header::default(),
         &Claims {
