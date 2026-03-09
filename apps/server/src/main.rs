@@ -22,7 +22,9 @@ async fn main() -> Result<()> {
         .parse()
         .context("invalid HTTP_ADDR")?;
 
+    let jwt_secret = std::env::var("JWT_SECRET").context("JWT_SECRET must be set")?;
+
     let db = create_db_pool(&database_url).await?;
     let redis = create_redis_client(&redis_url)?;
-    run_servers(db, redis, grpc_addr, http_addr).await
+    run_servers(db, redis, grpc_addr, http_addr, jwt_secret).await
 }
