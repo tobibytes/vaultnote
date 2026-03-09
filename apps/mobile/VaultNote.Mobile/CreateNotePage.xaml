@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VaultNote.Mobile.CreateNotePage"
+             Title="Create Note">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+
+            <Label Text="Create Note"
+                   Style="{StaticResource Headline}"
+                   SemanticProperties.HeadingLevel="Level1" />
+
+            <Label Text="Title" FontAttributes="Bold" />
+            <Entry x:Name="TitleEntry"
+                   Placeholder="Note title"
+                   ClearButtonVisibility="WhileEditing" />
+
+            <Label Text="Content" FontAttributes="Bold" />
+            <Editor x:Name="ContentEditor"
+                    Placeholder="Note content"
+                    AutoSize="TextChanges"
+                    MinimumHeightRequest="120" />
+
+            <Button x:Name="SaveButton"
+                    Text="Save Note"
+                    Clicked="OnSaveClicked"
+                    HorizontalOptions="Fill" />
+
+            <Label x:Name="StatusLabel"
+                   Text=""
+                   FontSize="14"
+                   LineBreakMode="WordWrap" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

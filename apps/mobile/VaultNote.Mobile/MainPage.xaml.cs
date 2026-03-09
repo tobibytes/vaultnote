@@ -18,6 +18,16 @@ public partial class MainPage : ContentPage
 		_client = new VaultNoteService.VaultNoteServiceClient(channel);
 	}
 
+	private async void OnCreateNoteClicked(object? sender, EventArgs e)
+	{
+		await Navigation.PushAsync(new CreateNotePage());
+	}
+
+	private async void OnListNotesClicked(object? sender, EventArgs e)
+	{
+		await Navigation.PushAsync(new ListNotesPage());
+	}
+
 	private async void OnPingClicked(object? sender, EventArgs e)
 	{
 		if (_pingInFlight)
