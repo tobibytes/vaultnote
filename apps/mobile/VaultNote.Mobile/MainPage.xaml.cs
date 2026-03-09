@@ -1,21 +1,15 @@
 ﻿using Grpc.Core;
-using Grpc.Net.Client;
 using VaultNote.Proto;
 
 namespace VaultNote.Mobile;
 
 public partial class MainPage : ContentPage
 {
-	private readonly VaultNoteService.VaultNoteServiceClient _client;
 	private bool _pingInFlight;
 
 	public MainPage()
 	{
 		InitializeComponent();
-
-		AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-		var channel = GrpcChannel.ForAddress("http://127.0.0.1:50051");
-		_client = new VaultNoteService.VaultNoteServiceClient(channel);
 	}
 
 	private async void OnCreateNoteClicked(object? sender, EventArgs e)
@@ -26,6 +20,26 @@ public partial class MainPage : ContentPage
 	private async void OnListNotesClicked(object? sender, EventArgs e)
 	{
 		await Navigation.PushAsync(new ListNotesPage());
+	}
+
+	private async void OnSearchNotesClicked(object? sender, EventArgs e)
+	{
+		await Navigation.PushAsync(new SearchNotesPage());
+	}
+
+	private async void OnAskVaultClicked(object? sender, EventArgs e)
+	{
+		await Navigation.PushAsync(new AskVaultPage());
+	}
+
+	private async void OnLoginClicked(object? sender, EventArgs e)
+	{
+		await Navigation.PushAsync(new LoginPage());
+	}
+
+	private async void OnRegisterClicked(object? sender, EventArgs e)
+	{
+		await Navigation.PushAsync(new RegisterPage());
 	}
 
 	private async void OnPingClicked(object? sender, EventArgs e)
@@ -41,7 +55,7 @@ public partial class MainPage : ContentPage
 			PingButton.IsEnabled = false;
 			PingStatusLabel.Text = "Pinging backend...";
 
-			var response = await _client.PingAsync(new PingRequest());
+			var response = await GrpcClientService.Client.PingAsync(new PingRequest());
 			PingStatusLabel.Text = $"Ping OK: {response.Message}";
 		}
 		catch (RpcException rpcEx)
