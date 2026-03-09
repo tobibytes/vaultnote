@@ -19,6 +19,16 @@ service VaultNoteService {
 
   // Milestone 8: bidirectional "Ask Vault" session
   rpc AskVault (stream AskVaultRequest) returns (stream AskVaultResponse);
+
+  // Future: Auth
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+
+  // Future: Vector DB semantic search
+  rpc SemanticSearch (SemanticSearchRequest) returns (stream Note);
+
+  // Future: AI summaries
+  rpc SummarizeNote (SummarizeNoteRequest) returns (SummarizeNoteResponse);
 }
 
 message PingRequest {}
@@ -76,4 +86,39 @@ message AskVaultRequest {
 // all tokens to assemble the full answer text.
 message AskVaultResponse {
   string token = 1;
+}
+
+// Future: Auth
+message RegisterRequest {
+  string email    = 1;
+  string password = 2;
+}
+
+message RegisterResponse {
+  string user_id = 1;
+}
+
+message LoginRequest {
+  string email    = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token   = 1;
+  string user_id = 2;
+}
+
+// Future: Vector DB semantic search
+message SemanticSearchRequest {
+  string query = 1;
+  int32  limit = 2;
+}
+
+// Future: AI summaries
+message SummarizeNoteRequest {
+  string note_id = 1;
+}
+
+message SummarizeNoteResponse {
+  string summary = 1;
 }
