@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Environment
+.env
+
+# Rust
+apps/server/target/
+**/*.rs.bk
+
+# .NET / MAUI
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# IDE
+.vscode/
+.idea/

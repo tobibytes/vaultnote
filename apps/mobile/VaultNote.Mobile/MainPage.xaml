@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VaultNote.Mobile.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16">
+            <Label
+                Text="VaultNote Bootstrap"
+                Style="{StaticResource Headline}"
+                SemanticProperties.HeadingLevel="Level1" />
+
+            <Label
+                Text="Milestone 3: gRPC Ping"
+                Style="{StaticResource SubHeadline}" />
+
+            <Button
+                x:Name="PingButton"
+                Text="Ping Backend"
+                Clicked="OnPingClicked"
+                HorizontalOptions="Fill" />
+
+            <Label
+                x:Name="PingStatusLabel"
+                Text="No ping sent yet."
+                FontSize="16"
+                LineBreakMode="WordWrap" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

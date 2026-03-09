@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: vaultnote-postgres
+    environment:
+      POSTGRES_USER: vaultnote
+      POSTGRES_PASSWORD: vaultnote
+      POSTGRES_DB: vaultnote
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: vaultnote-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
