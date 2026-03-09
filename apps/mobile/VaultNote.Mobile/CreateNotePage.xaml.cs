@@ -47,7 +47,8 @@ public partial class CreateNotePage : ContentPage
             });
 
             var note = response.Note;
-            StatusLabel.Text = $"Saved: {note?.Title} (id: {note?.Id?[..8]}…)";
+            var shortId = note?.Id is { Length: >= 8 } id ? id[..8] : note?.Id ?? string.Empty;
+            StatusLabel.Text = $"Saved: {note?.Title} (id: {shortId}…)";
             TitleEntry.Text = string.Empty;
             ContentEditor.Text = string.Empty;
         }

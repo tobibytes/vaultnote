@@ -175,12 +175,20 @@ async fn ready_handler(State(state): State<AppState>) -> (StatusCode, &'static s
     }
 
     let redis_ok = match state.redis.get_multiplexed_async_connection().await {
-        Ok(mut conn) => redis::cmd("PING")
+        Ok(mut conn) => match redis::cmd("PING")
             .query_async::<String>(&mut conn)
             .await
-            .map(|r| r == "PONG")
-            .unwrap_or(false),
-        Err(_) => false,
+        {
+            Ok(r) => r == "PONG",
+            Err(err) => {
+                error!(error = %err, "readiness probe failed: redis PING error");
+                false
+            }
+        },
+        Err(err) => {
+            error!(error = %err, "readiness probe failed: redis connection error");
+            false
+        }
     };
 
     if !redis_ok {
