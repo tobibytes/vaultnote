@@ -1,21 +1,15 @@
 using Grpc.Core;
-using Grpc.Net.Client;
 using VaultNote.Proto;
 
 namespace VaultNote.Mobile;
 
 public partial class CreateNotePage : ContentPage
 {
-    private readonly VaultNoteService.VaultNoteServiceClient _client;
     private bool _saveInFlight;
 
     public CreateNotePage()
     {
         InitializeComponent();
-
-        AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-        var channel = GrpcChannel.ForAddress("http://127.0.0.1:50051");
-        _client = new VaultNoteService.VaultNoteServiceClient(channel);
     }
 
     private async void OnSaveClicked(object? sender, EventArgs e)
@@ -40,7 +34,7 @@ public partial class CreateNotePage : ContentPage
             SaveButton.IsEnabled = false;
             StatusLabel.Text = "Saving...";
 
-            var response = await _client.CreateNoteAsync(new CreateNoteRequest
+            var response = await GrpcClientService.Client.CreateNoteAsync(new CreateNoteRequest
             {
                 Title = title,
                 Content = content,

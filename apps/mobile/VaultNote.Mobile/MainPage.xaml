@@ -14,6 +14,12 @@
                 Text="Personal knowledge vault"
                 Style="{StaticResource SubHeadline}" />
 
+            <Label
+                Text="Notes"
+                FontAttributes="Bold"
+                FontSize="14"
+                TextColor="{StaticResource Gray600}" />
+
             <Button
                 Text="Create Note"
                 Clicked="OnCreateNoteClicked"
@@ -23,6 +29,38 @@
                 Text="List Notes"
                 Clicked="OnListNotesClicked"
                 HorizontalOptions="Fill" />
+
+            <Button
+                Text="Search Notes"
+                Clicked="OnSearchNotesClicked"
+                HorizontalOptions="Fill" />
+
+            <Button
+                Text="Ask Vault"
+                Clicked="OnAskVaultClicked"
+                HorizontalOptions="Fill" />
+
+            <Label
+                Text="Account"
+                FontAttributes="Bold"
+                FontSize="14"
+                TextColor="{StaticResource Gray600}" />
+
+            <Button
+                Text="Login"
+                Clicked="OnLoginClicked"
+                HorizontalOptions="Fill" />
+
+            <Button
+                Text="Register"
+                Clicked="OnRegisterClicked"
+                HorizontalOptions="Fill" />
+
+            <Label
+                Text="Diagnostics"
+                FontAttributes="Bold"
+                FontSize="14"
+                TextColor="{StaticResource Gray600}" />
 
             <Button
                 x:Name="PingButton"
